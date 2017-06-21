@@ -1,0 +1,45 @@
+if [ "x${eth}" == "x" ];
+then
+	echo "Please set eth, ex: export eth=ens3"
+	exit 1
+fi
+
+echo "eth=${eth}"
+
+#eth=enp0s25
+#eth=wlp3s0
+
+
+# macvtap
+ip link add link ${eth} name macvtap1 type macvtap mode bridge
+ip link set macvtap1 up
+chmod a+r /dev/tap$(cat /sys/class/net/macvtap1/ifindex) /sys/class/net/macvtap1/ifindex
+chmod a+w /dev/tap$(cat /sys/class/net/macvtap1/ifindex) /sys/class/net/macvtap1/ifindex
+
+ip link add link ${eth} name macvtap2 type macvtap mode bridge
+ip link set macvtap2 up
+chmod a+r /dev/tap$(cat /sys/class/net/macvtap2/ifindex) /sys/class/net/macvtap2/ifindex
+chmod a+w /dev/tap$(cat /sys/class/net/macvtap2/ifindex) /sys/class/net/macvtap2/ifindex
+
+# Routing
+IP=$(ip address show dev ${eth} | grep "inet " | awk '{print $2}')
+NETWORK=$(ip -o route | grep ${eth} | grep -v default | awk '{print $1}')
+GATEWAY=$(ip -o route | grep default | awk '{print $3}')
+
+ip link add link ${eth} macvlan0 type macvlan mode bridge
+ip address add ${IP} dev macvlan0
+ip link set macvlan0 up
+
+ip route flush dev ${eth}
+ip route flush dev macvlan0
+ip route add ${NETWORK} dev macvlan0 metric 0
+ip route add default via $GATEWAY
+
+# IB Modules
+modprobe ib_core; modprobe ib_umad; modprobe rdma_ucm; modprobe ib_uverbs;
+
+# For RXE
+#modprobe rdma_rxe;
+#echo ${eth} > /sys/module/rdma_rxe/parameters/add
+#echo macvtap3 > /sys/module/rdma_rxe/parameters/add
+#echo macvtap4 > /sys/module/rdma_rxe/parameters/add
