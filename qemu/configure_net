@@ -1,25 +1,52 @@
-if [ "x${eth}" == "x" ];
+add_ipv6_to_if()
+{
+	eth=$1
+	macvtap=$2
+
+	#ifconfig ens3 add fe80::5054:00ff:fe12:2457/64
+	# Extract first byte
+	f=$(ifconfig ${macvtap}|grep ether|awk '{print $2}'|awk -F: '{print $1}')
+	# XOR it with 2
+	f=$((0x$f ^ 2))
+	# Reformat to HEX
+	f=$(printf "%x\n" ${f})
+	ipv6=$(ifconfig ${macvtap}|grep ether|awk '{print $2}'|awk -v f1=$f -F: '{print "fe80::"f1$2":"$3"ff:fe"$4":"$5$6"/64"}')
+	ifconfig ${eth} add $ipv6
+}
+
+create_macvtap()
+{
+	eth=$1
+	name=$2
+	ip link add link ${eth} name ${name} type macvtap mode bridge
+	ip link set ${name} up
+	chmod a+r /dev/tap$(cat /sys/class/net/${name}/ifindex) /sys/class/net/${name}/ifindex
+	chmod a+w /dev/tap$(cat /sys/class/net/${name}/ifindex) /sys/class/net/${name}/ifindex
+}
+
+if [ "x$1" == "x" ];
 then
-	echo "Please set eth, ex: export eth=ens3"
+	echo "Usage $0 ifname"
 	exit 1
 fi
 
-echo "eth=${eth}"
+ifconfig $1 > /dev/null 2>&1
+if [ $? -ne 0 ];
+then
+	echo "Can't find interface $1"
+	exit 2
+fi
 
-#eth=enp0s25
-#eth=wlp3s0
+eth=$1
+echo "rxe net_dev=${eth}"
 
+# Create macvtap device for each VM
+create_macvtap ${eth} macvtap1
+create_macvtap ${eth} macvtap2
 
-# macvtap
-ip link add link ${eth} name macvtap1 type macvtap mode bridge
-ip link set macvtap1 up
-chmod a+r /dev/tap$(cat /sys/class/net/macvtap1/ifindex) /sys/class/net/macvtap1/ifindex
-chmod a+w /dev/tap$(cat /sys/class/net/macvtap1/ifindex) /sys/class/net/macvtap1/ifindex
-
-ip link add link ${eth} name macvtap2 type macvtap mode bridge
-ip link set macvtap2 up
-chmod a+r /dev/tap$(cat /sys/class/net/macvtap2/ifindex) /sys/class/net/macvtap2/ifindex
-chmod a+w /dev/tap$(cat /sys/class/net/macvtap2/ifindex) /sys/class/net/macvtap2/ifindex
+# Add IP6v (reverse order - for rxe gid indexing)
+add_ipv6_to_if ${eth} macvtap2
+add_ipv6_to_if ${eth} macvtap1
 
 # Routing
 IP=$(ip address show dev ${eth} | grep "inet " | awk '{print $2}')
@@ -38,8 +65,8 @@ ip route add default via $GATEWAY
 # IB Modules
 modprobe ib_core; modprobe ib_umad; modprobe rdma_ucm; modprobe ib_uverbs;
 
-# For RXE
-#modprobe rdma_rxe;
-#echo ${eth} > /sys/module/rdma_rxe/parameters/add
-#echo macvtap3 > /sys/module/rdma_rxe/parameters/add
-#echo macvtap4 > /sys/module/rdma_rxe/parameters/add
+# RXE
+modprobe rdma_rxe;
+echo ${eth} > /sys/module/rdma_rxe/parameters/add
+echo "rxe gid table"
+cat /sys/class/infiniband/rxe0/ports/1/gids/[0-4]

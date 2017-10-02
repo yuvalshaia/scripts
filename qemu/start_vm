@@ -6,25 +6,25 @@ mem=2G
 cpus=4
 
 backend=rxe
-#backend_dev="${backend}$1"
 backend_dev="${backend}0"
 #backend=mlx4_
 #backend_dev="${backend}$(($1 + 1))"
-backend_gid_idx=$(($1 + 1))
+backend_gid_idx=$(($1 + 2))
 backend_port=1
-guest_pci_addr=10
+pci_addr_roce=10
+pci_addr_local=11
 
 vnc=${vnc_ip}:$1
 tcp_port=1002$1
 
-pvrdma_args="-device pvrdma,addr=${guest_pci_addr}.1,backend-dev=${backend_dev},backend-gid-idx=${backend_gid_idx},backend-port=${backend_port}"
-#mac="02:4b:50:b7:1a:5$1"
+pvrdma_args="-device pvrdma,addr=${pci_addr_roce}.1,backend-dev=${backend_dev},backend-gid-idx=${backend_gid_idx},backend-port=${backend_port}"
 mac="52:ff:c0:a8:01:$(($1 + 63))"
-eth_for_roce_args="-netdev user,id=id0,hostfwd=tcp::${tcp_port}-:22 -device vmxnet3,addr=${guest_pci_addr},multifunction=on,mac=${mac},netdev=id0"
+eth_for_local="-netdev user,id=id0,hostfwd=tcp::${tcp_port}-:22 -device e1000,addr=${pci_addr_local},mac=${mac},netdev=id0"
+#eth_for_roce_args="-netdev user,id=id0,hostfwd=tcp::${tcp_port}-:22 -device vmxnet3,addr=${pci_addr_roce},multifunction=on,mac=${mac},netdev=id0"
 macvtap_mac="$(ip addr show dev macvtap${1}|grep ether|awk '{print $2}')"
-eth_args="-netdev tap,id=tap0,fd=3 3<>/dev/tap$(cat /sys/class/net/macvtap$1/ifindex) -device e1000,mac=${macvtap_mac},netdev=tap0"
+eth_for_roce_args="-netdev tap,id=tap0,fd=3 3<>/dev/tap$(cat /sys/class/net/macvtap$1/ifindex) -device vmxnet3,addr=${pci_addr_roce},multifunction=on,mac=${macvtap_mac},netdev=tap0"
 
-cmd="$qemu -m ${mem} -smp ${cpus} --enable-kvm -hda ${disk} ${eth_for_roce_args} ${pvrdma_args} ${eth_args} >/tmp/qemu_$1.log &"
+cmd="$qemu -m ${mem} -smp ${cpus} --enable-kvm -hda ${disk} ${eth_for_roce_args} ${pvrdma_args} ${eth_for_local} >/tmp/qemu_$1.log &"
 #cmd="$qemu -display vnc=${vnc} -m ${mem} -smp ${cpus} --enable-kvm -hda ${disk} ${eth_for_roce_args} ${pvrdma_args} ${eth_args} >/tmp/qemu_$1.log &"
 
 echo $cmd
