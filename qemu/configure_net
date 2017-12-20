@@ -49,18 +49,18 @@ add_ipv6_to_if ${eth} macvtap2
 add_ipv6_to_if ${eth} macvtap1
 
 # Routing
-IP=$(ip address show dev ${eth} | grep "inet " | awk '{print $2}')
-NETWORK=$(ip -o route | grep ${eth} | grep -v default | awk '{print $1}')
-GATEWAY=$(ip -o route | grep default | awk '{print $3}')
+#IP=$(ip address show dev ${eth} | grep "inet " | awk '{print $2}')
+#NETWORK=$(ip -o route | grep ${eth} | grep -v default | awk '{print $1}')
+#GATEWAY=$(ip -o route | grep default | awk '{print $3}')
 
-ip link add link ${eth} macvlan0 type macvlan mode bridge
-ip address add ${IP} dev macvlan0
-ip link set macvlan0 up
+#ip link add link ${eth} macvlan0 type macvlan mode bridge
+#ip address add ${IP} dev macvlan0
+#ip link set macvlan0 up
 
-ip route flush dev ${eth}
-ip route flush dev macvlan0
-ip route add ${NETWORK} dev macvlan0 metric 0
-ip route add default via $GATEWAY
+#ip route flush dev ${eth}
+#ip route flush dev macvlan0
+#ip route add ${NETWORK} dev macvlan0 metric 0
+#ip route add default via $GATEWAY
 
 # IB Modules
 modprobe ib_core; modprobe ib_umad; modprobe rdma_ucm; modprobe ib_uverbs;
