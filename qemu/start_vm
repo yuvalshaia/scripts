@@ -24,6 +24,7 @@ eth_for_local="-netdev user,id=id0,hostfwd=tcp::${tcp_port}-:22 -device e1000,ad
 macvtap_mac="$(ip addr show dev macvtap${1}|grep ether|awk '{print $2}')"
 eth_for_roce_args="-netdev tap,id=tap0,fd=3 3<>/dev/tap$(cat /sys/class/net/macvtap$1/ifindex) -device vmxnet3,addr=${pci_addr_roce},multifunction=on,mac=${macvtap_mac},netdev=tap0"
 
-cmd="$qemu -display vnc=${vnc} -m ${mem} -smp ${cpus} --enable-kvm -hda ${disk} ${eth_for_roce_args} ${pvrdma_args} ${eth_for_local} >/tmp/qemu_$1.log &"
+cmd="$qemu -snapshot -display vnc=${vnc} -object
+memory-backend-ram,id=mb1,size=${mem},share -numa node,memdev=mb1 -m ${mem} -smp ${cpus} --enable-kvm -hda ${disk} ${eth_for_roce_args} ${pvrdma_args} ${eth_for_local} >/tmp/qemu_$1.log &"
 
 echo $cmd
