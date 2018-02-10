@@ -70,3 +70,14 @@ modprobe rdma_rxe;
 echo ${eth} > /sys/module/rdma_rxe/parameters/add
 echo "rxe gid table"
 cat /sys/class/infiniband/rxe0/ports/1/gids/[0-4]
+
+# We don't want rdma_cm on the host
+modprobe -r ib_ipoib
+modprobe -r ib_iser
+modprobe -r ib_srp
+modprobe -r ib_isert
+modprobe -r rpcrdma
+modprobe -r rdma_ucm
+modprobe -r rdma_cm
+modprobe ib_umad
+modprobe ib_uverbs
