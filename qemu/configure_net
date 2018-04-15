@@ -60,8 +60,8 @@ create_macvtap ${eth} macvtap1
 create_macvtap ${eth} macvtap2
 
 # Add IP6v (reverse order - for rxe gid indexing)
-add_ipv6_to_if ${eth} macvtap2
-add_ipv6_to_if ${eth} macvtap1
+#add_ipv6_to_if ${eth} macvtap2
+#add_ipv6_to_if ${eth} macvtap1
 
 # Routing
 #IP=$(ip address show dev ${eth} | grep "inet " | awk '{print $2}')
@@ -79,6 +79,10 @@ add_ipv6_to_if ${eth} macvtap1
 
 # IB Modules
 modprobe ib_core; modprobe ib_umad; modprobe rdma_ucm; modprobe ib_uverbs;
+
+# Add two IPv6 to ${eth}
+ifconfig ${eth} add fe80::5054:ff:fe12:3457
+ifconfig ${eth} add fe80::5054:ff:fe12:3458
 
 # RXE
 modprobe rdma_rxe;

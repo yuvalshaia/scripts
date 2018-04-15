@@ -31,13 +31,26 @@ vnc=${vnc_ip}:$1
 tcp_port=1002$1
 
 pvrdma_args="-device pvrdma,addr=${pci_addr_roce}.1,backend-dev=${backend_dev},backend-gid-idx=${backend_gid_idx},backend-port=${backend_port}"
-mac="52:ff:c0:a8:01:$(($1 + 63))"
-eth_for_local="-netdev user,id=id0,hostfwd=tcp::${tcp_port}-:22 -device e1000,addr=${pci_addr_local},mac=${mac},netdev=id0"
-#eth_for_roce_args="-netdev user,id=id0,hostfwd=tcp::${tcp_port}-:22 -device vmxnet3,addr=${pci_addr_roce},multifunction=on,mac=${mac},netdev=id0"
+
 macvtap_mac="$(ip addr show dev macvtap${1}|grep ether|awk '{print $2}')"
-eth_for_roce_args="-netdev tap,id=tap0,fd=3 3<>/dev/tap$(cat /sys/class/net/macvtap$1/ifindex) -device vmxnet3,addr=${pci_addr_roce},multifunction=on,mac=${macvtap_mac},netdev=tap0"
+# Make MAC from GID
+f1=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($5,1,2)}')
+f1=$((0x$f1 ^ 2))
+f1=$(printf "%x\n" ${f1})
+f2=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($5,3,2)}')
+f3=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($6,1,2)}')
+f4=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($7,3,2)}')
+f5=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($8,1,2)}')
+f6=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($8,3,2)}')
+pvrdma_mac="${f1}:${f2}:${f3}:${f4}:${f5}:${f6}"
+
+eth_for_pvrdma="-netdev user,id=id0,hostfwd=tcp::${tcp_port}-:22 -device vmxnet3,addr=${pci_addr_roce},multifunction=on,mac=${pvrdma_mac},netdev=id0"
+
+eth_for_macvtap="-netdev tap,id=tap0,fd=3 3<>/dev/tap$(cat /sys/class/net/macvtap$1/ifindex) -device e1000,addr=${pci_addr_local},mac=${macvtap_mac},netdev=tap0"
+
 
 cmd="$qemu ${snapshot} -display vnc=${vnc} -object
-memory-backend-ram,id=mb1,size=${mem},share -numa node,memdev=mb1 -m ${mem} -smp ${cpus} --enable-kvm -hda ${disk} ${hdb} ${eth_for_roce_args} ${pvrdma_args} ${eth_for_local} >${log} &"
+memory-backend-ram,id=mb1,size=${mem},share -numa node,memdev=mb1 -m ${mem}
+-smp ${cpus} --enable-kvm -hda ${disk} ${hdb} ${pvrdma_args} ${eth_for_pvrdma} ${eth_for_macvtap} >${log} &"
 
 echo ${cmd}
