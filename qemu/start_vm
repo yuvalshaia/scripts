@@ -1,39 +1,55 @@
 #! /bin/bash
 
-log=/disk2/qemu_$1.log
-qemu=~/git/qemu/x86_64-softmmu/qemu-system-x86_64
-disk=/disk2/qemu/disks/srv${1}.qcow2
-vnc_ip=localhost
+qemu=./qemu/x86_64-softmmu/qemu-system-x86_64
+disk=/home/yshaia/qemu/disks/pvrdma-fc27-0.qcow2
+vnc_ip=ca-dev66.us.oracle.com
 
 mem=1G
 cpus=1
 snapshot="-snapshot"
 hdb=""
 
-if [ "x$2" != "x" ];
+if [ $# -ne 3 ]
 then
-	mem=4G
-	cpus=4
-	snapshot=""
-	hdb="-hdb /disk2/qemu/disks/data1.qcow2"
+	echo "Usage: $0 mng_if roce_if ipv6"
+	exit 1
 fi
 
-backend=rxe
-backend_dev="${backend}0"
-#backend=mlx4_
-#backend_dev="${backend}$(($1 + 1))"
-backend_gid_idx=$(($1 + 2))
+ifconfig ${eth} > /dev/null 2>&1
+if [ $? -ne 0 ];
+then
+	echo "Can't find interface ${eth}"
+	exit 2
+fi
+
+mng_eth=$1
+eth=$2
+ipv6_idx=$3
+
+log=/tmp/qemu_${eth}_${ipv6_idx}.log
+
+ipv6=$(ifconfig ${eth}|grep inet6|grep -n fe80|grep ^${ipv6_idx}|awk '{print $3}')
+
+s=$(echo ${ipv6}|awk -F:: '{print $2}')
+s=$(echo ${s}|awk -F: '{print $1}')
+backend_dev=$(ls /sys/class/net/${eth}/device/infiniband)
+fn=$(grep -l1 ${s} /sys/class/net/${eth}/device/infiniband/${backend_dev}/ports/1/gids/*)
+backend_gid_idx=$(basename $(grep -l1 ${s} /sys/class/net/${eth}/device/infiniband/${backend_dev}/ports/1/gids/*))
+
+macvtap_idx=$((${ipv6_idx} - 2))
+
 backend_port=1
 pci_addr_roce=10
 pci_addr_local=11
 
-vnc=${vnc_ip}:$1
-tcp_port=1002$1
+vnc=${vnc_ip}:${ipv6_idx}
+tcp_port=1002${ipv6_idx}
 
 pvrdma_args="-device pvrdma,addr=${pci_addr_roce}.1,backend-dev=${backend_dev},backend-gid-idx=${backend_gid_idx},backend-port=${backend_port}"
 
-macvtap_mac="$(ip addr show dev macvtap${1}|grep ether|awk '{print $2}')"
+macvtap_mac="$(ip addr show dev ${mng_eth}_${macvtap_idx}|grep ether|awk '{print $2}')"
 # Make MAC from GID
+echo "cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($5,1,2)}'"
 f1=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($5,1,2)}')
 f1=$((0x$f1 ^ 2))
 f1=$(printf "%x\n" ${f1})
@@ -43,14 +59,13 @@ f4=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backe
 f5=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($8,1,2)}')
 f6=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($8,3,2)}')
 pvrdma_mac="${f1}:${f2}:${f3}:${f4}:${f5}:${f6}"
+echo $pvrdma_mac
 
 eth_for_pvrdma="-netdev user,id=id0,hostfwd=tcp::${tcp_port}-:22 -device vmxnet3,addr=${pci_addr_roce},multifunction=on,mac=${pvrdma_mac},netdev=id0"
 
-eth_for_macvtap="-netdev tap,id=tap0,fd=3 3<>/dev/tap$(cat /sys/class/net/macvtap$1/ifindex) -device e1000,addr=${pci_addr_local},mac=${macvtap_mac},netdev=tap0"
+eth_for_macvtap="-netdev tap,id=tap0,fd=3 3<>/dev/tap$(cat /sys/class/net/${mng_eth}_${macvtap_idx}/ifindex) -device e1000,addr=${pci_addr_local},mac=${macvtap_mac},netdev=tap0"
 
 
-cmd="$qemu ${snapshot} -display vnc=${vnc} -object
-memory-backend-ram,id=mb1,size=${mem},share -numa node,memdev=mb1 -m ${mem}
--smp ${cpus} --enable-kvm -hda ${disk} ${hdb} ${pvrdma_args} ${eth_for_pvrdma} ${eth_for_macvtap} >${log} &"
+cmd="$qemu ${snapshot} -display vnc=${vnc} -object memory-backend-ram,id=mb1,size=${mem},share -numa node,memdev=mb1 -m ${mem} -smp ${cpus} --enable-kvm -hda ${disk} ${hdb} ${pvrdma_args} ${eth_for_pvrdma} ${eth_for_macvtap} >${log} &"
 
 echo ${cmd}

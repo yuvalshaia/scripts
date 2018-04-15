@@ -1,0 +1,68 @@
+#/bin/bash
+
+create_macvtap()
+{
+	eth_local=$1
+	name=$2
+	ip link add link ${eth_local} name ${name} type macvtap mode bridge
+	ip link set ${name} up
+	chmod a+r /dev/tap$(cat /sys/class/net/${name}/ifindex) /sys/class/net/${name}/ifindex
+	chmod a+w /dev/tap$(cat /sys/class/net/${name}/ifindex) /sys/class/net/${name}/ifindex
+}
+
+if [ $# -ne 3 ]
+then
+	echo "Usage: $0 mng_if roce_if num_vms"
+	exit 1
+fi
+
+mng_eth=$1
+eth=$2
+num_vms=$3
+
+ifconfig ${eth} > /dev/null 2>&1
+if [ $? -ne 0 ];
+then
+	echo "Can't find interface $1"
+	exit 2
+fi
+
+ipv6=$(ifconfig ${eth} | grep fe80 | head -1|awk '{print $2}'|awk -F:: '{print $2}')
+for ((i = 1; i <= ${num_vms}; i++))
+do
+	# Create macvtap on top of managment interface
+	create_macvtap ${mng_eth} ${mng_eth}_${i}
+
+	# Add IPv6 address to RoCE interface
+	f=$(echo ${ipv6} | awk -F: '{print $1}')
+	f=$((0x${f} + ${i}))
+	f=$(printf "%x\n" ${f})
+	ifconfig ${eth} add $(echo ${ipv6} | awk -F: -v v1=${f} '{print "fe80::"v1":"$2":"$3":"$4}')
+done
+
+# Routing
+#IP=$(ip address show dev ${eth} | grep "inet " | awk '{print $2}')
+#NETWORK=$(ip -o route | grep ${eth} | grep -v default | awk '{print $1}')
+#GATEWAY=$(ip -o route | grep default | awk '{print $3}')
+
+#ip link add link ${eth} macvlan0 type macvlan mode bridge
+#ip address add ${IP} dev macvlan0
+#ip link set macvlan0 up
+
+#ip route flush dev ${eth}
+#ip route flush dev macvlan0
+#ip route add ${NETWORK} dev macvlan0 metric 0
+#ip route add default via $GATEWAY
+
+# IB Modules
+modprobe ib_core; modprobe ib_umad; modprobe rdma_ucm; modprobe ib_uverbs;
+
+# If not Mellanox RoCE device then let's start rxe
+if [ $(ethtool -i ${eth}|grep driver|grep mlx|wc -l) -eq 0 ]
+then
+	echo "rxe net_dev=${eth}"
+	modprobe rdma_rxe;
+	echo ${eth} > /sys/module/rdma_rxe/parameters/add
+	echo "rxe gid table"
+	cat /sys/class/infiniband/rxe0/ports/1/gids/[0-4]
+fi
