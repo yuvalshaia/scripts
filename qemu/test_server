@@ -1,8 +1,0 @@
-cycles=$1
-dev=mlx5_1
-sizes="8196 1048576 2097152 3145728 8388608 16777216 67108864 134217728"
-
-for s in ${sizes}; do
-        r=$(ibv_rc_pingpong -d ${dev} -g 7 -n ${cycles} -s ${s} | grep "Mbit/sec"|awk '{print $7}')
-        echo "${s}: ${r}"
-done
