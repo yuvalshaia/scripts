@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ $# -ne 2 ];
+then
+	echo "Usage: $0 roce_if ipv6_idx"
+	exit 1
+fi
+
+eth=$1
+idx=$2
+
+tcp_port=$((10000 + 0x$(sha1sum <<<${eth}${idx}|cut -c1-2)))
+ssh root@127.0.0.1 -p ${tcp_port}

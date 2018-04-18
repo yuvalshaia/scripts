@@ -31,7 +31,7 @@ ipv6=$(ifconfig ${eth} | grep fe80 | head -1|awk '{print $2}'|awk -F:: '{print $
 for ((i = 1; i <= ${num_vms}; i++))
 do
 	# Create macvtap on top of managment interface
-	create_macvtap ${mng_eth} ${mng_eth}_${i}
+	create_macvtap ${mng_eth} ${eth}_${i}
 
 	# Add IPv6 address to RoCE interface
 	f=$(echo ${ipv6} | awk -F: '{print $1}')
