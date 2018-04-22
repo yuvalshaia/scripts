@@ -1,13 +1,20 @@
 #!/bin/bash
 
-if [ $# -ne 2 ];
+if [ $# -ne 1 ];
 then
 	echo "Usage: $0 roce_if ipv6_idx"
 	exit 1
 fi
 
-eth=$1
-idx=$2
+if [ $(ps -ef|grep qemu|grep pvrdma|awk -Fname '{print $2}'|awk '{print $1}'|wc -l) -ne 1 ];
+then
+	echo "VM $1 is down"
+	exit 2
+fi
+
+name_idx=$1
+eth=$(echo ${name_idx}|awk -F\- '{print $1}')
+idx=$(echo ${name_idx}|awk -F\- '{print $2}')
 
 tcp_port=$((10000 + 0x$(sha1sum <<<${eth}${idx}|cut -c1-2)))
 ssh root@127.0.0.1 -p ${tcp_port}
