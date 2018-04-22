@@ -8,7 +8,6 @@ vnc_ip=ca-dev66.us.oracle.com
 mem=8G
 cpus=4
 snapshot="-snapshot"
-snapshot=""
 hdb=""
 
 if [ $# -ne 3 ]
