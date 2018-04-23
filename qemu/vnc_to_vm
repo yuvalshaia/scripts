@@ -1,13 +1,21 @@
 #!/bin/bash
 
-if [ $# -ne 2 ];
+if [ $# -ne 1 ];
 then
 	echo "Usage: $0 roce_if ipv6_idx"
 	exit 1
 fi
 
-eth=$1
-idx=$2
+name_idx=$1
 
-vnc_port=$((0x$(sha1sum <<<${eth}${idx}|cut -c1-2)))
-vncviewer ca-dev66:${vnc_port}
+if [ $(ps -ef|grep qemu|grep pvrdma|awk -Fname '{print $2}'|awk '{print $1}'|grep $name_idx|wc -l) -ne 1 ];
+then
+	echo "VM $1 is down"
+	exit 2
+fi
+
+eth=$(echo ${name_idx}|awk -F\- '{print $1}')
+idx=$(echo ${name_idx}|awk -F\- '{print $2}')
+
+vnc_id=$((0x$(sha1sum <<<${eth}${idx}|cut -c1-2)))
+vncviewer localhost:${vnc_id}
