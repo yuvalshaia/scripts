@@ -1,14 +1,22 @@
 #! /bin/bash
 
-qemu=$HOME//git/qemu/x86_64-softmmu/qemu-system-x86_64
-images_dir=/disk2/qemu/disks/
-base_image=srv_base.qcow2
-vnc_ip=localhost
+cfg_file=./.start_vm.cfg 
 
+# Default settings
+qemu=$HOME/qemu/x86_64-softmmu/qemu-system-x86_64
+images_dir=$HOME/disks/
+base_image=pvrdma-fc27-0.qcow2
+vnc_ip=localhost
 mem=1G
 cpus=1
 snapshot="-snapshot"
 hdb=""
+
+if [ -f ${cfg_file} ];
+then
+	. ${cfg_file}
+fi
+
 
 if [ $# -ne 3 ]
 then
