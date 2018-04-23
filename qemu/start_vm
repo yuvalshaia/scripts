@@ -67,7 +67,7 @@ else
 fi
 macvtap_idx=${idx} 
 
-ipv6=$(ifconfig ${eth}|grep inet6|grep -n fe80|grep ^${idx}:|awk '{print $3}')
+ipv6=$(ifconfig ${eth}|grep inet6|grep fe80|head -n ${idx}|tail -1|awk '{print $2}')
 if [ "x${ipv6}" == "x" ];
 then
 	echo "No IPv6 at index ${idx}"
