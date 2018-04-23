@@ -32,7 +32,7 @@ mng_eth=$1
 eth=$2
 idx=$3
 
-vm_name="${eth}-${idx}"
+vm_name="${mng_eth}-${eth}-${idx}"
 log=/tmp/qemu_${eth}_${idx}.log
 vm_img_file=pvrdma-${eth}-${idx}.qcow2
 
@@ -84,7 +84,7 @@ backend_port=1
 pci_addr_roce=10
 pci_addr_local=11
 
-uniq_id=$((0x$(sha1sum <<<${eth}${idx}|cut -c1-2)))
+uniq_id=$((0x$(sha1sum <<<${mng_eth}${eth}${idx}|cut -c1-2)))
 vnc=${vnc_ip}:${uniq_id}
 tcp_port=$((10000 + ${uniq_id}))
 

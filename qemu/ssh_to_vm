@@ -14,8 +14,9 @@ then
 	exit 2
 fi
 
-eth=$(echo ${name_idx}|awk -F\- '{print $1}')
-idx=$(echo ${name_idx}|awk -F\- '{print $2}')
+mng_eth=$(echo ${name_idx}|awk -F\- '{print $1}')
+eth=$(echo ${name_idx}|awk -F\- '{print $2}')
+idx=$(echo ${name_idx}|awk -F\- '{print $3}')
 
-tcp_port=$((10000 + 0x$(sha1sum <<<${eth}${idx}|cut -c1-2)))
+tcp_port=$((10000 + 0x$(sha1sum <<<${mng_eth}${eth}${idx}|cut -c1-2)))
 ssh root@127.0.0.1 -p ${tcp_port}
