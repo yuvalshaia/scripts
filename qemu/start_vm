@@ -1,12 +1,12 @@
 #! /bin/bash
 
-qemu=./qemu/x86_64-softmmu/qemu-system-x86_64
-images_dir=./disks
-base_image=pvrdma-fc27-0.qcow2
-vnc_ip=ca-dev66.us.oracle.com
+qemu=$HOME//git/qemu/x86_64-softmmu/qemu-system-x86_64
+images_dir=/disk2/qemu/disks/
+base_image=srv_base.qcow2
+vnc_ip=localhost
 
-mem=8G
-cpus=4
+mem=1G
+cpus=1
 snapshot="-snapshot"
 hdb=""
 
@@ -14,6 +14,18 @@ if [ $# -ne 3 ]
 then
 	echo "Usage: $0 mng_if roce_if ipv6_idx"
 	exit 1
+fi
+
+if [ ! -f ${qemu} ];
+then
+	echo "Can't find qemu exec"
+	exit 2
+fi
+
+if [ ! -f ${images_dir}/${base_image} ];
+then
+	echo "Can't find base image"
+	exit 3
 fi
 
 mng_eth=$1
@@ -28,13 +40,13 @@ ifconfig ${mng_eth} > /dev/null 2>&1
 if [ $? -ne 0 ];
 then
 	echo "Can't find interface ${mng_eth}"
-	exit 2
+	exit 4
 fi
 ifconfig ${eth} > /dev/null 2>&1
 if [ $? -ne 0 ];
 then
 	echo "Can't find interface ${eth}"
-	exit 2
+	exit 5
 fi
 
 backend_dev=$(ls /sys/class/net/${eth}/device/infiniband 2>/dev/null)
@@ -42,7 +54,7 @@ backend_dev=$(ls /sys/class/net/${eth}/device/infiniband 2>/dev/null)
 if [ $? != 0 ];
 then
 	echo "Please run configure_pvrdma first"
-	exit 3
+	exit 6
 fi
 
 # If this is RXE setup then start from gid 3
@@ -53,8 +65,15 @@ then
 else
 	macvtap_idx=${idx} 
 fi
+macvtap_idx=${idx} 
 
-ipv6=$(ifconfig ${eth}|grep inet6|grep -n fe80|grep ^${idx}|awk '{print $3}')
+ipv6=$(ifconfig ${eth}|grep inet6|grep -n fe80|grep ^${idx}:|awk '{print $3}')
+if [ "x${ipv6}" == "x" ];
+then
+	echo "No IPv6 at index ${idx}"
+	exit 7
+fi
+
 s=$(echo ${ipv6}|awk -F:: '{print $2}')
 s=$(echo ${s}|awk -F: '{print $1}')
 fn=$(grep -l1 ${s} /sys/class/net/${eth}/device/infiniband/${backend_dev}/ports/1/gids/*)
@@ -71,8 +90,11 @@ tcp_port=$((10000 + ${uniq_id}))
 
 pvrdma_args="-device pvrdma,addr=${pci_addr_roce}.1,backend-dev=${backend_dev},backend-gid-idx=${backend_gid_idx},backend-port=${backend_port}"
 
-macvtap_mac="$(ip addr show dev ${eth}_${macvtap_idx}|grep ether|awk '{print $2}')"
-# Make MAC from GID
+# For managment interface get macvtap MAC
+tapifindex=$(cat /sys/class/net/${eth}_${macvtap_idx}/ifindex)
+macvtap_mac=$(cat /sys/class/macvtap/tap${tapifindex}/device/address)
+
+# For pvrdma Ethernet function (vmxnet3) make MAC from GID
 f1=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($5,1,2)}')
 f1=$((0x$f1 ^ 2))
 f1=$(printf "%x\n" ${f1})
@@ -85,7 +107,7 @@ pvrdma_mac="${f1}:${f2}:${f3}:${f4}:${f5}:${f6}"
 
 eth_for_pvrdma="-netdev user,id=id0,hostfwd=tcp::${tcp_port}-:22 -device vmxnet3,addr=${pci_addr_roce},multifunction=on,mac=${pvrdma_mac},netdev=id0"
 
-eth_for_macvtap="-netdev tap,id=tap0,fd=3 3<>/dev/tap$(cat /sys/class/net/${eth}_${macvtap_idx}/ifindex) -device e1000,addr=${pci_addr_local},mac=${macvtap_mac},netdev=tap0"
+eth_for_macvtap="-netdev tap,id=tap0,fd=3 3<>/dev/tap${tapifindex} -device e1000,addr=${pci_addr_local},mac=${macvtap_mac},netdev=tap0"
 
 if [ ! -f ${images_dir}/${vm_img_file} ];
 then
@@ -100,4 +122,5 @@ rm -f /tmp/exec.$$
 echo ${cmd} > /tmp/exec.$$
 chmod +x /tmp/exec.$$
 /tmp/exec.$$ &
+sleep 2
 rm -f /tmp/exec.$$
