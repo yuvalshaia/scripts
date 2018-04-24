@@ -1,0 +1,38 @@
+#! /bin/bash
+
+if [ $# -eq 0 ];
+then
+        echo "Usage: <stack-string>"
+        exit 1
+fi
+
+str=$1
+sym=`echo $str | awk -F+ '{print $1}'`
+ofstmp=`echo $str | awk -F+ '{print $2}'`
+ofstmp2=`echo $ofstmp | awk -F/ '{print $1}'`
+ofs1=`echo $ofstmp2 | awk -Fx '{print $2}'`
+ofs=`echo $ofs1 | tr '[:lower:]' '[:upper:]'`
+
+module="`echo $2 | awk -F[ '{print $2}' | awk -F] '{print $1}'`.ko"
+if [ "$module" == ".ko" ];
+then
+        module=vmlinux
+else
+        module=`find . -name $module`
+fi
+echo "module=$module"
+
+func_addr1=`gdb -eval-command "disassemble $sym" --batch $module|head -2|tail -1|awk '{print $1}'`
+func_addr2=`echo $func_addr1 | tr '[:lower:]' '[:upper:]'`
+func_addr=`echo $func_addr2|awk -FX '{print $2}'`
+bug_addr=`echo "obase=16;ibase=16; $func_addr + $ofs" | bc`
+src_line=`gdb -eval-command "list *0x${bug_addr}" --batch $module|head -1`
+src=`echo $src_line |awk -F\( '{print $2}'|awk -F\) '{print $1}'|awk -F\: '{print $1}'`
+line=`echo $src_line |awk -F\( '{print $2}'|awk -F\) '{print $1}'|awk -F\: '{print $2}'`
+echo "File: $src"
+echo "Line: $line"
+if [ "X${src}" != "X" ] && [ -f ${src} ];
+then
+        vim +${line} ${src}
+fi
+

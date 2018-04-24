@@ -1,0 +1,3 @@
+ko=$1
+uname=$(uname -r)
+make drivers/infiniband/core/${ko}.ko;rm -f /lib/modules/${uname}/kernel/drivers/infiniband/core/${ko}.ko; cp drivers/infiniband/core/${ko}.ko  /lib/modules/${uname}/kernel/drivers/infiniband/core/${ko}.ko
