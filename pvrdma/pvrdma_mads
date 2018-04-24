@@ -1,0 +1,8 @@
+dev=vmw_pvrdma0
+#dev=rxe0
+netdev=enp0s16f0
+
+ipv6=$(/usr/bin/awk -F0000:0000:0000: '{print $1":"$2}' /sys/class/infiniband/${dev}/ports/1/gids/0)
+echo "ipv6=${ipv6}"
+echo "/mnt/git/rdma-core/build/bin/rdma_server -s ${ipv6}%${netdev}"
+/mnt/git/rdma-core/build/bin/rdma_server -s ${ipv6}%${netdev}

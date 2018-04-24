@@ -1,0 +1,18 @@
+modprobe -r vmw_pvrdma
+modprobe -r ib_iser
+modprobe -r rdma_rxe
+modprobe -r ib_cm
+modprobe -r rdma_cm
+modprobe -r ib_umad
+modprobe -r ib_srp
+modprobe -r ib_isert
+modprobe -r ib_uverbs
+modprobe -r rpcrdma
+modprobe -r ib_ipoib
+modprobe -r iw_cm
+modprobe -r ib_srpt
+modprobe -r ib_ucm
+modprobe -r rdma_ucm
+
+lsmod|grep ib_core
+

@@ -1,0 +1,19 @@
+modprobe -r vmw_pvrdma;
+modprobe vmw_pvrdma;
+dev=vmw_pvrdma0
+netdev=enp0s16f0
+
+#modprobe rdma_rxe
+#echo ens16f0 > /sys/module/rdma_rxe/parameters/add
+#dev=rxe0
+
+modprobe ib_core;
+modprobe ib_umad;
+modprobe rdma_ucm;
+modprobe ib_uverbs;
+modprobe ib_cm;
+modprobe rdma_cm;
+
+ipv6=$(/usr/bin/awk -F0000:0000:0000: '{print $1":"$2}' /sys/class/infiniband/${dev}/ports/1/gids/0)
+
+/sbin/ifconfig ${netdev} add ${ipv6}
