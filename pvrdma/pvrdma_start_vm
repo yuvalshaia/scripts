@@ -1,6 +1,6 @@
 #! /bin/bash
 
-cfg_file=./.start_vm.cfg 
+cfg_file=./.pvrdma_start_vm.cfg 
 
 # Default settings
 qemu=$HOME/qemu/x86_64-softmmu/qemu-system-x86_64
