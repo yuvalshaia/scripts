@@ -1,7 +1,7 @@
 modprobe -r vmw_pvrdma;
 modprobe vmw_pvrdma;
 dev=vmw_pvrdma0
-netdev=enp0s16f0
+netdev=ens16f0
 
 #modprobe rdma_rxe
 #echo ens16f0 > /sys/module/rdma_rxe/parameters/add
