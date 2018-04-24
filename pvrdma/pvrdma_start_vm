@@ -11,6 +11,7 @@ mem=1G
 cpus=1
 snapshot="-snapshot"
 hdb=""
+log_dir=/tmp
 
 if [ -f ${cfg_file} ];
 then
@@ -41,8 +42,8 @@ eth=$2
 idx=$3
 
 vm_name="${mng_eth}-${eth}-${idx}"
-log=/tmp/qemu_${eth}_${idx}.log
-vm_img_file=pvrdma-${eth}-${idx}.qcow2
+log=${log_dir}/pvrdma-${vm_name}.log
+vm_img_file=pvrdma-${vm_name}.qcow2
 
 ifconfig ${mng_eth} > /dev/null 2>&1
 if [ $? -ne 0 ];
