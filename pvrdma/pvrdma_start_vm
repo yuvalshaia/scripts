@@ -114,9 +114,9 @@ f5=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backe
 f6=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($8,3,2)}')
 pvrdma_mac="${f1}:${f2}:${f3}:${f4}:${f5}:${f6}"
 
-eth_for_pvrdma="-netdev user,id=id0,hostfwd=tcp::${tcp_port}-:22 -device vmxnet3,addr=${pci_addr_roce},multifunction=on,mac=${pvrdma_mac},netdev=id0"
-
+eth_for_pvrdma="-netdev user,net=20.0.0.0/24,id=pvrdma -device vmxnet3,addr=${pci_addr_roce},multifunction=on,mac=${pvrdma_mac},netdev=pvrdma"
 eth_for_macvtap="-netdev tap,id=tap0,fd=3 3<>/dev/tap${tapifindex} -device e1000,addr=${pci_addr_local},mac=${macvtap_mac},netdev=tap0"
+eth_for_mng="-netdev user,net=30.0.0.0/24,id=mng,hostfwd=tcp::${tcp_port}-:22 -device e1000,netdev=mng"
 
 if [ ! -f ${images_dir}/${vm_img_file} ];
 then
@@ -125,8 +125,16 @@ then
 	cd -
 fi
 
-cmd="$qemu -name ${vm_name} ${snapshot} -display vnc=${vnc} -object memory-backend-ram,id=mb1,size=${mem},share -numa node,memdev=mb1 -m ${mem} -smp ${cpus} --enable-kvm -hda ${images_dir}/${vm_img_file} ${hdb} ${pvrdma_args} ${eth_for_pvrdma} ${eth_for_macvtap} >${log} &"
+cmd="$qemu -name ${vm_name} ${snapshot} -display vnc=${vnc}"
+cmd="${cmd} -object memory-backend-ram,id=mb1,size=${mem},share -numa node,memdev=mb1 -m ${mem}"
+cmd="${cmd} -smp ${cpus} --enable-kvm -hda ${images_dir}/${vm_img_file} ${hdb}"
+cmd="${cmd} ${eth_for_pvrdma} ${pvrdma_args}"
+cmd="${cmd} ${eth_for_mng}"
+cmd="${cmd} ${eth_for_macvtap}"
+cmd="${cmd} >${log} &"
 
+echo $cmd
+#exit
 rm -f /tmp/exec.$$
 echo ${cmd} > /tmp/exec.$$
 chmod +x /tmp/exec.$$
