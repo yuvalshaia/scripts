@@ -116,7 +116,7 @@ pvrdma_mac="${f1}:${f2}:${f3}:${f4}:${f5}:${f6}"
 
 eth_for_pvrdma="-netdev user,net=20.0.0.0/24,id=pvrdma -device vmxnet3,addr=${pci_addr_roce},multifunction=on,mac=${pvrdma_mac},netdev=pvrdma"
 eth_for_macvtap="-netdev tap,id=tap0,fd=3 3<>/dev/tap${tapifindex} -device e1000,addr=${pci_addr_local},mac=${macvtap_mac},netdev=tap0"
-eth_for_mng="-netdev user,net=30.0.0.0/24,id=mng,hostfwd=tcp::${tcp_port}-:22 -device e1000,netdev=mng"
+eth_for_mng="-netdev user,net=30.0.0.0/24,id=mng,hostfwd=tcp::${tcp_port}-:22 -device e1000,netdev=mng,mac=52:54:00:12:34:0${idx}"
 
 if [ ! -f ${images_dir}/${vm_img_file} ];
 then
@@ -133,8 +133,6 @@ cmd="${cmd} ${eth_for_mng}"
 cmd="${cmd} ${eth_for_macvtap}"
 cmd="${cmd} >${log} &"
 
-echo $cmd
-#exit
 rm -f /tmp/exec.$$
 echo ${cmd} > /tmp/exec.$$
 chmod +x /tmp/exec.$$
