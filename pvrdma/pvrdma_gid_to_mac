@@ -1,0 +1,18 @@
+#! /bin/bash
+
+backend_dev=$1
+backend_port=$2
+backend_gid_idx=$3
+
+# For pvrdma Ethernet function (vmxnet3) make MAC from GID
+f1=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($5,1,2)}')
+f1=$((0x$f1 ^ 2))
+f1=$(printf "%x\n" ${f1})
+f2=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($5,3,2)}')
+f3=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($6,1,2)}')
+f4=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($7,3,2)}')
+f5=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($8,1,2)}')
+f6=$(cat /sys/class/infiniband/${backend_dev}/ports/${backend_port}/gids/${backend_gid_idx}|awk -F: '{print substr($8,3,2)}')
+pvrdma_mac="${f1}:${f2}:${f3}:${f4}:${f5}:${f6}"
+
+echo ${pvrdma_mac}
