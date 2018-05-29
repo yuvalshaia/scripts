@@ -1,0 +1,7 @@
+echo "module ib_core +pflm" > /sys/kernel/debug/dynamic_debug/control
+echo "module ib_umad +pflm" > /sys/kernel/debug/dynamic_debug/control
+echo "module ib_mad +pflm" > /sys/kernel/debug/dynamic_debug/control
+echo "module rdma_ucm +pflm" > /sys/kernel/debug/dynamic_debug/control
+echo "module ib_uverbs +pflm" > /sys/kernel/debug/dynamic_debug/control
+echo "module ib_cm +pflm" > /sys/kernel/debug/dynamic_debug/control
+echo "module rdma_rxe +pflm" > /sys/kernel/debug/dynamic_debug/control
