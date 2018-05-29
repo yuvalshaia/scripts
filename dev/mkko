@@ -1,0 +1,18 @@
+#/bin.bash
+mod=$1
+cpus=`grep processo /proc/cpuinfo |wc -l`
+cpus=`expr $cpus \* 2`
+src_ko=`find . -name $mod.ko`
+dst_ko=`modinfo $mod |grep filename|awk '{print $2}'`
+echo "src=$src_ko"
+echo "dst=$dst_ko"
+#modprobe -r $mod
+#make -j $cpus $src_ko
+make -j 2 $src_ko
+sts=$?
+echo $src_ko
+echo $dst_ko
+/bin/cp $src_ko $dst_ko
+#modprobe $mod
+#
+exit $sts
