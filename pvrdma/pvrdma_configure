@@ -28,18 +28,18 @@ ipv6=$(ifconfig ${eth} | grep fe80 | head -1|awk '{print $2}'|awk -F:: '{print $
 for ((i = 1; i <= ${num_vms}; i++))
 do
 	# Add IPv6 address to RoCE interface
-	f1=$(echo ${ipv6} | awk -F: '{print $1}')
-	f1=$((0x${f1} + ${i}))
-	f=$(printf "%x\n" ${f1})
+	s0=$(echo ${ipv6} | awk -F: '{print $1}')
+	s0=$((0x${s0} + ${i}))
+	s0=$(printf "%x\n" ${s0})
 	# Special case where IP start with 0, let's pad it with 5
-	if [ $(echo ${f1}|wc -c) -eq 4 ];
+	if [ $(echo ${s0}|wc -c) -eq 4 ];
 	then
-		f="5${f1}"
+		f="5${s0}"
 	fi
 
-	s1=$(echo ${ipv6}|awk -v ipv6=${ipv6} '{print substr(ipv6, 1, 7)}')
+	s1=$(echo ${ipv6}|awk -v ipv6=${ipv6} '{print substr(ipv6, 6, 2)}')
 	s2=$(echo ${ipv6}|awk -v ipv6=${ipv6} '{print substr(ipv6, 13, 7)}')
-	ifconfig ${eth} add $(echo "fe80::${s1}ff:fe${s2}")
+	ifconfig ${eth} add $(echo "fe80::${s0}:${s1}ff:fe${s2}")
 done
 
 # IB Modules
