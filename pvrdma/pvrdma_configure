@@ -1,0 +1,57 @@
+#!/bin/bash
+
+if [ $# -ne 3 ]
+then
+	echo "Usage: $0 mng_if roce_if num_vms"
+	exit 1
+fi
+
+mng_eth=$1
+eth=$2
+num_vms=$3
+
+ifconfig ${mng_eth} > /dev/null 2>&1
+if [ $? -ne 0 ];
+then
+	echo "Can't find interface ${mng_eth}"
+	exit 2
+fi
+
+ifconfig ${eth} > /dev/null 2>&1
+if [ $? -ne 0 ];
+then
+	echo "Can't find interface ${eth}"
+	exit 2
+fi
+
+ipv6=$(ifconfig ${eth} | grep fe80 | head -1|awk '{print $2}'|awk -F:: '{print $2}')
+for ((i = 1; i <= ${num_vms}; i++))
+do
+	# Add IPv6 address to RoCE interface
+	f1=$(echo ${ipv6} | awk -F: '{print $1}')
+	f1=$((0x${f1} + ${i}))
+	f=$(printf "%x\n" ${f1})
+	# Special case where IP start with 0, let's pad it with 5
+	if [ $(echo ${f1}|wc -c) -eq 4 ];
+	then
+		f="5${f1}"
+	fi
+
+	s1=$(echo ${ipv6}|awk -v ipv6=${ipv6} '{print substr(ipv6, 1, 7)}')
+	s2=$(echo ${ipv6}|awk -v ipv6=${ipv6} '{print substr(ipv6, 13, 7)}')
+	ifconfig ${eth} add $(echo "fe80::${s1}ff:fe${s2}")
+done
+
+# IB Modules
+modprobe -r ib_uverbs;modprobe -r ib_umad;modprobe -r rdma_rxe;modprobe -r ib_core
+modprobe ib_core; modprobe ib_umad; modprobe rdma_ucm; modprobe ib_uverbs;
+
+# If not Mellanox RoCE device then let's start rxe
+if [ $(ethtool -i ${eth}|grep driver|grep mlx|wc -l) -eq 0 ]
+then
+	#echo "rxe net_dev=${eth}"
+	modprobe rdma_rxe;
+	echo ${eth} > /sys/module/rdma_rxe/parameters/add
+	#echo "rxe gid table"
+	#cat /sys/class/infiniband/rxe0/ports/1/gids/[0-4]
+fi
