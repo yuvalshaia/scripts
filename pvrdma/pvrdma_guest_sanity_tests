@@ -1,0 +1,17 @@
+ibv_rc_pingpong -g 0 > /dev/null &
+sleep 2
+ibv_rc_pingpong -g 0 localhost > /dev/null
+echo $?
+sleep 2
+
+ibv_rc_pingpong -g 0 -s 1048576 > /dev/null &
+sleep 2
+ibv_rc_pingpong -g 0 -s 1048576 localhost > /dev/null
+echo $?
+sleep 2
+
+ibv_ud_pingpong -g 0 -s 1024 > /dev/null &
+sleep 2
+ibv_ud_pingpong -g 0 -s 1024 localhost > /dev/null
+echo $?
+sleep 2
