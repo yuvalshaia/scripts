@@ -1,3 +1,12 @@
+killall ibv_rc_pingpong>/dev/null 2>&1
+killall ibv_ud_pingpong>/dev/null 2>&1
+
+ibv_rc_pingpong -g 0 -n 1 > /dev/null &
+sleep 2
+ibv_rc_pingpong -g 0 -n 1 localhost > /dev/null
+echo $?
+sleep 2
+
 ibv_rc_pingpong -g 0 > /dev/null &
 sleep 2
 ibv_rc_pingpong -g 0 localhost > /dev/null
