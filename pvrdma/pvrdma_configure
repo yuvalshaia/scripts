@@ -41,9 +41,11 @@ do
 	fi
 	s0=$(echo $s0|awk -v s0=${s0} '{print"54" substr(s0, 3, 2)}')
 
-	s1=$(echo ${ipv6}|awk -v ipv6=${ipv6} '{print substr(ipv6, 6, 2)}')
-	s2=$(echo ${ipv6}|awk -v ipv6=${ipv6} '{print substr(ipv6, 13, 7)}')
-	ifconfig ${eth} add $(echo "fe80::${s0}:${s1}ff:fe${s2}")
+	#s1=$(echo ${ipv6}|awk -v ipv6=${ipv6} '{print substr(ipv6, 6, 2)}')
+	#s2=$(echo ${ipv6}|awk -v ipv6=${ipv6} '{print substr(ipv6, 13, 7)}')
+	#ifconfig ${eth} add $(echo "fe80::${s0}:${s1}ff:fe${s2}")
+	s2=$(echo ${ipv6}|awk -v ipv6=${ipv6} '{print substr(ipv6, 5, 20)}')
+	ifconfig ${eth} add $(echo "fe80::${s0}${s2}")
 done
 
 # IB Modules
