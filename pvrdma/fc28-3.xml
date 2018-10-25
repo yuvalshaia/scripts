@@ -1,16 +1,16 @@
 <!--
 WARNING: THIS IS AN AUTO-GENERATED FILE. CHANGES TO IT ARE LIKELY TO BE
 OVERWRITTEN AND LOST. Changes to this xml configuration should be made using:
-  virsh edit fc28-1
+  virsh edit fc28-3
 or other application using the libvirt API.
 -->
 
 <domain type='kvm' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
-  <name>fc28-1</name>
-  <uuid>70ad3959-9699-44b8-b620-a65afb893500</uuid>
-  <memory unit='KiB'>2097152</memory>
-  <currentMemory unit='KiB'>2097152</currentMemory>
-  <vcpu placement='static'>2</vcpu>
+  <name>fc28-3</name>
+  <uuid>23da8a26-bcc0-4446-be61-82b74c85cbfb</uuid>
+  <memory unit='KiB'>1048576</memory>
+  <currentMemory unit='KiB'>1048576</currentMemory>
+  <vcpu placement='static'>4</vcpu>
   <os>
     <type arch='x86_64' machine='pc-i440fx-2.11'>hvm</type>
     <boot dev='hd'/>
@@ -36,7 +36,7 @@ or other application using the libvirt API.
     <emulator>/root/git/qemu/x86_64-softmmu/qemu-system-x86_64</emulator>
     <disk type='file' device='disk'>
       <driver name='qemu' type='qcow2'/>
-      <source file='/home/qemu/disks/fc28-1.qcow2'/>
+      <source file='/home/qemu/disks/fc28-3.qcow2'/>
       <target dev='vda' bus='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
     </disk>
@@ -60,13 +60,13 @@ or other application using the libvirt API.
       <address type='pci' domain='0x0000' bus='0x00' slot='0x06' function='0x0'/>
     </controller>
     <interface type='bridge'>
-      <mac address='52:54:00:1d:3f:6a'/>
+      <mac address='52:54:00:cf:0a:12'/>
       <source bridge='bridge0'/>
       <model type='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
     </interface>
     <interface type='bridge'>
-      <mac address='56:b6:44:e9:62:dc'/>
+      <mac address='56:b2:44:e9:62:dc'/>
       <source bridge='bridge1'/>
       <model type='vmxnet3'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x10' function='0x0' multifunction='on'/>
@@ -83,9 +83,6 @@ or other application using the libvirt API.
       <target type='virtio' name='org.qemu.guest_agent.0'/>
       <address type='virtio-serial' controller='0' bus='0' port='1'/>
     </channel>
-    <input type='tablet' bus='usb'>
-      <address type='usb' bus='0' port='1'/>
-    </input>
     <input type='mouse' bus='ps2'/>
     <input type='keyboard' bus='ps2'/>
     <graphics type='vnc' port='-1' autoport='yes'>
@@ -107,13 +104,13 @@ or other application using the libvirt API.
     <qemu:arg value='-enable-kvm'/>
     <qemu:arg value='-snapshot'/>
     <qemu:arg value='-object'/>
-    <qemu:arg value='memory-backend-ram,id=mb1,size=2G,share'/>
+    <qemu:arg value='memory-backend-ram,id=mb1,size=1G,share'/>
     <qemu:arg value='-numa'/>
     <qemu:arg value='node,memdev=mb1'/>
     <qemu:arg value='-chardev'/>
     <qemu:arg value='socket,path=/var/run/rdmacm-mux-rxe0-1,id=mads'/>
     <qemu:arg value='-device'/>
-    <qemu:arg value='pvrdma,addr=10.1,netdev=bridge0,ibdev=rxe0,ibport=1,mad-chardev=mads'/>
+    <qemu:arg value='pvrdma,addr=10.1,ibdev=rxe0,ibport=1,netdev=bridge0,mad-chardev=mads'/>
     <qemu:env name='LD_PRELOAD' value='/root/git/rdma-core/build/lib/libibverbs.so'/>
   </qemu:commandline>
 </domain>
