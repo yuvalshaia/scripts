@@ -1,0 +1,6 @@
+telnet localhost 4443
+{ "execute": "qmp_capabilities" }
+
+make install;/bin/cp -f ~/git/scripts/pvrdma/qemu.conf /etc/libvirt/qemu.conf;/bin/cp -f ~/git/scripts/pvrdma/libvirtd.conf /etc/libvirt/libvirtd.conf;systemctl daemon-reload;systemctl restart libvirtd.service
+
+less /var/log/libvirt/libvirtd.log
