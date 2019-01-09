@@ -7,10 +7,10 @@ or other application using the libvirt API.
 
 <domain type='kvm' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>fc28-2</name>
-  <uuid>4ff96d48-5593-473b-ad6b-c4c919f6b31f</uuid>
-  <memory unit='KiB'>1048576</memory>
-  <currentMemory unit='KiB'>1048576</currentMemory>
-  <vcpu placement='static'>4</vcpu>
+  <uuid>075157a3-ed69-441c-a36a-4c121adfdc7f</uuid>
+  <memory unit='KiB'>2097152</memory>
+  <currentMemory unit='KiB'>2097152</currentMemory>
+  <vcpu placement='static'>2</vcpu>
   <os>
     <type arch='x86_64' machine='pc-i440fx-2.11'>hvm</type>
     <boot dev='hd'/>
@@ -20,6 +20,9 @@ or other application using the libvirt API.
     <apic/>
     <vmport state='off'/>
   </features>
+  <cpu mode='custom' match='exact' check='partial'>
+    <model fallback='allow'>SandyBridge-IBRS</model>
+  </cpu>
   <clock offset='utc'>
     <timer name='rtc' tickpolicy='catchup'/>
     <timer name='pit' tickpolicy='delay'/>
@@ -33,43 +36,43 @@ or other application using the libvirt API.
     <suspend-to-disk enabled='no'/>
   </pm>
   <devices>
-    <emulator>/root/git/qemu/x86_64-softmmu/qemu-system-x86_64</emulator>
+    <emulator>/home/root/git/qemu/x86_64-softmmu/qemu-system-x86_64</emulator>
     <disk type='file' device='disk'>
       <driver name='qemu' type='qcow2'/>
       <source file='/home/qemu/disks/fc28-2.qcow2'/>
       <target dev='vda' bus='virtio'/>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x06' function='0x0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
     </disk>
     <controller type='usb' index='0' model='ich9-ehci1'>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x7'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x7'/>
     </controller>
     <controller type='usb' index='0' model='ich9-uhci1'>
       <master startport='0'/>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0' multifunction='on'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x0' multifunction='on'/>
     </controller>
     <controller type='usb' index='0' model='ich9-uhci2'>
       <master startport='2'/>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x1'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x1'/>
     </controller>
     <controller type='usb' index='0' model='ich9-uhci3'>
       <master startport='4'/>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x2'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x2'/>
     </controller>
     <controller type='pci' index='0' model='pci-root'/>
     <controller type='virtio-serial' index='0'>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x06' function='0x0'/>
     </controller>
     <interface type='bridge'>
-      <mac address='52:54:00:07:8f:1e'/>
+      <mac address='52:54:00:30:c8:8c'/>
       <source bridge='bridge0'/>
       <model type='virtio'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
     </interface>
     <interface type='bridge'>
-      <mac address='56:b4:44:e9:62:dc'/>
+      <mac address='52:54:00:77:c8:32'/>
       <source bridge='bridge1'/>
       <model type='vmxnet3'/>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x10' function='0x0' multifunction='on'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x0a' function='0x0' multifunction='on'/>
     </interface>
     <serial type='pty'>
       <target type='isa-serial' port='0'>
@@ -83,6 +86,9 @@ or other application using the libvirt API.
       <target type='virtio' name='org.qemu.guest_agent.0'/>
       <address type='virtio-serial' controller='0' bus='0' port='1'/>
     </channel>
+    <input type='tablet' bus='usb'>
+      <address type='usb' bus='0' port='1'/>
+    </input>
     <input type='mouse' bus='ps2'/>
     <input type='keyboard' bus='ps2'/>
     <graphics type='vnc' port='-1' autoport='yes'>
@@ -93,23 +99,30 @@ or other application using the libvirt API.
       <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>
     </video>
     <memballoon model='virtio'>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x08' function='0x0'/>
     </memballoon>
     <rng model='virtio'>
       <backend model='random'>/dev/urandom</backend>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x08' function='0x0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>
     </rng>
   </devices>
   <qemu:commandline>
     <qemu:arg value='-enable-kvm'/>
+    <qemu:arg value='-snapshot'/>
     <qemu:arg value='-object'/>
-    <qemu:arg value='memory-backend-ram,id=mb1,size=1G,share'/>
+    <qemu:arg value='memory-backend-ram,id=mb1,size=2G,share'/>
     <qemu:arg value='-numa'/>
     <qemu:arg value='node,memdev=mb1'/>
+    <qemu:arg value='-monitor'/>
+    <qemu:arg value='telnet:127.0.0.1:20002,server,nowait'/>
+    <qemu:arg value='--trace'/>
+    <qemu:arg value='events=/qemu-trace-events'/>
+    <qemu:arg value='-qmp'/>
+    <qemu:arg value='tcp:localhost:4442,server,nowait'/>
     <qemu:arg value='-chardev'/>
     <qemu:arg value='socket,path=/var/run/rdmacm-mux-rxe0-1,id=mads'/>
     <qemu:arg value='-device'/>
-    <qemu:arg value='pvrdma,addr=10.1,ibdev=rxe0,ibport=1,netdev=bridge0,mad-chardev=mads'/>
+    <qemu:arg value='pvrdma,addr=0a.1,netdev=bridge0,ibdev=rxe0,ibport=1,mad-chardev=mads'/>
     <qemu:env name='LD_PRELOAD' value='/root/git/rdma-core/build/lib/libibverbs.so'/>
   </qemu:commandline>
 </domain>
