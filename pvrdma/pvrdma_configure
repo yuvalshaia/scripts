@@ -1,30 +1,40 @@
 #!/bin/bash
 
+# RDMA bridge name
+rdma_br=bridge1
+
 if [ $# -ne 1 ]
 then
-	echo "Usage: $0 netdev"
+	echo "Usage: $0 ibdev or netdev for rxe"
 	exit 1
-fi
-
-eth=$1
-
-brctl addbr bridge1
-ifconfig bridge1 up
-
-ifconfig ${eth} > /dev/null 2>&1
-if [ $? -ne 0 ];
-then
-	echo "Can't find netdev ${eth}"
-	exit 2
 fi
 
 # IB Modules
 modprobe -r ib_uverbs;modprobe -r ib_umad;modprobe -r rdma_rxe;modprobe -r ib_core
 modprobe ib_core; modprobe ib_umad; modprobe rdma_ucm; modprobe ib_uverbs;
 
-# If not Mellanox RoCE device then let's start rxe
-if [ $(ethtool -i ${eth}|grep driver|grep mlx|wc -l) -eq 0 ]
+dev=$1
+eth=$(ls /sys/class/infiniband/${dev}/device/net/ 2>/dev/null)
+
+if [ $? -ne 0 ];
 then
+	# If fail let's try rxe
+	ip addr show ${dev} >/dev/null 2>&1
+	if [ $? -ne 0 ];
+	then
+		echo "${dev} is nither ibdev nor netdev"
+		exit 1
+	fi
+	eth=$dev
 	modprobe rdma_rxe;
-	echo ${eth} > /sys/module/rdma_rxe/parameters/add
+	echo ${eth} > /sys/module/rdma_rxe/parameters/add 2>/dev/null
+	if [ $? -ne 0 ];
+	then
+		echo "Fail to make rxe device from ${eth}"
+		exit 1
+	fi
 fi
+
+brctl addbr ${rdma_br}
+ifconfig ${rdma_br} up
+brctl addif ${rdma_br} ${eth}
