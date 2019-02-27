@@ -3,35 +3,36 @@ killall ibv_ud_pingpong>/dev/null 2>&1
 killall udaddy>/dev/null 2>&1
 
 dev=vmw_pvrdma0
-netdev=ens16f0
+netdev=ens4f0
+gid_idx=2
 
 ipv6=$(/usr/bin/awk -F0000:0000:0000: '{print $1":"$2}' /sys/class/infiniband/${dev}/ports/1/gids/0)
 
 echo -n "rc one msg: "
-ibv_rc_pingpong -g 0 -n 1 > /dev/null &
+ibv_rc_pingpong -g ${gid_idx} -n 1 > /dev/null &
 sleep 2
-ibv_rc_pingpong -g 0 -n 1 localhost > /dev/null
+ibv_rc_pingpong -g ${gid_idx} -n 1 localhost > /dev/null
 echo $?
 sleep 2
 
 echo -n "rc def sz : "
-ibv_rc_pingpong -g 0 > /dev/null &
+ibv_rc_pingpong -g ${gid_idx} > /dev/null &
 sleep 2
-ibv_rc_pingpong -g 0 localhost > /dev/null
+ibv_rc_pingpong -g ${gid_idx} localhost > /dev/null
 echo $?
 sleep 2
 
 echo -n "rc 1m     : "
-ibv_rc_pingpong -g 0 -s 1048576 > /dev/null &
+ibv_rc_pingpong -g ${gid_idx} -s 1048576 > /dev/null &
 sleep 2
-ibv_rc_pingpong -g 0 -s 1048576 localhost > /dev/null
+ibv_rc_pingpong -g ${gid_idx} -s 1048576 localhost > /dev/null
 echo $?
 sleep 2
 
 echo -n "ud        : "
-ibv_ud_pingpong -g 0 -s 1024 > /dev/null &
+ibv_ud_pingpong -g ${gid_idx} -s 1024 > /dev/null &
 sleep 2
-ibv_ud_pingpong -g 0 -s 1024 localhost > /dev/null
+ibv_ud_pingpong -g ${gid_idx} -s 1024 localhost > /dev/null
 echo $?
 sleep 2
 
